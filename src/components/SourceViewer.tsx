@@ -102,17 +102,25 @@ export function SourceViewer() {
       .finally(() => setLoading(false));
   }, [activeDocId]);
 
+  // Clear highlight refs when item changes so they get rebuilt
+  useEffect(() => {
+    highlightRefs.current.clear();
+  }, [selectedIndex]);
+
   // Auto-scroll to active citation
   useEffect(() => {
     if (activeCitationIndex !== null && viewMode === "raw") {
-      const el = highlightRefs.current.get(activeCitationIndex);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("citation-flash");
-        setTimeout(() => el.classList.remove("citation-flash"), 1200);
-      }
+      // Wait for DOM to update with new highlight spans
+      requestAnimationFrame(() => {
+        const el = highlightRefs.current.get(activeCitationIndex);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("citation-flash");
+          setTimeout(() => el.classList.remove("citation-flash"), 1200);
+        }
+      });
     }
-  }, [activeCitationIndex, viewMode, docContent]);
+  }, [activeCitationIndex, viewMode, docContent, selectedIndex]);
 
   // Get citations for current doc
   const docCitations = useMemo(() => {
