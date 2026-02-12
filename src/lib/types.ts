@@ -49,10 +49,13 @@ export interface LoadKBResponse {
 
 export interface LoadOutputRequest {
   path: string;
+  force?: boolean;
 }
 
 export interface LoadOutputResponse {
   count: number;
+  hasExistingReview?: boolean;
+  reviewItemCount?: number;
 }
 
 export interface ComputeSpanRequest {

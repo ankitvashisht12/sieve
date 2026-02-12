@@ -6,6 +6,16 @@ import { openFolderDialog, openFileDialog } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export function SetupScreen() {
   const { loadKB, loadOutput, startReview, kbDocIds } = useReviewStore();
@@ -18,6 +28,7 @@ export function SetupScreen() {
   const [outputLoading, setOutputLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [reviewPrompt, setReviewPrompt] = useState<{ path: string; count: number } | null>(null);
 
   const handleLoadKB = async (path?: string) => {
     const p = path ?? kbPath;
@@ -34,19 +45,36 @@ export function SetupScreen() {
     }
   };
 
-  const handleLoadOutput = async (path?: string) => {
+  const handleLoadOutput = async (path?: string, force?: boolean) => {
     const p = path ?? outputPath;
     if (!p) return;
     setError(null);
     setOutputLoading(true);
     try {
-      const result = await loadOutput(p);
+      const result = await loadOutput(p, force);
+      if (result.hasExistingReview) {
+        setReviewPrompt({ path: p, count: result.reviewItemCount ?? 0 });
+        setOutputLoading(false);
+        return;
+      }
       setOutputCount(result.count);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load output");
     } finally {
       setOutputLoading(false);
     }
+  };
+
+  const handleResumeReview = async () => {
+    if (!reviewPrompt) return;
+    setReviewPrompt(null);
+    await handleLoadOutput(reviewPrompt.path, false);
+  };
+
+  const handleStartFresh = async () => {
+    if (!reviewPrompt) return;
+    setReviewPrompt(null);
+    await handleLoadOutput(reviewPrompt.path, true);
   };
 
   const handleBrowseKB = async () => {
@@ -175,6 +203,32 @@ export function SetupScreen() {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={reviewPrompt !== null} onOpenChange={(open) => { if (!open) setReviewPrompt(null); }}>
+        <AlertDialogContent className="border-[#2a2a2a] bg-[#0d1a14]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[#4ade80]">Previous Review Found</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#8a8a8a]">
+              A review.jsonl from a previous session exists for this file ({reviewPrompt?.count} items).
+              Would you like to resume where you left off or start fresh from the output file?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleStartFresh}
+              className="border-[#2a2a2a] text-[#8a8a8a] hover:text-[#e0e0e0]"
+            >
+              Start Fresh
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResumeReview}
+              className="bg-[#4ade80] text-[#080f0b] hover:bg-[#22c55e]"
+            >
+              Resume
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

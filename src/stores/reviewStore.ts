@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { ReviewItem, Citation } from "@/lib/types";
+import { ReviewItem, Citation, LoadOutputResponse } from "@/lib/types";
 import * as api from "@/lib/api";
 
 interface ReviewFilters {
@@ -43,7 +43,7 @@ interface ReviewStore {
 
   // Setup actions
   loadKB: (path: string) => Promise<{ count: number; doc_ids: string[] }>;
-  loadOutput: (path: string) => Promise<{ count: number }>;
+  loadOutput: (path: string, force?: boolean) => Promise<LoadOutputResponse>;
   startReview: () => Promise<void>;
   restoreSession: () => Promise<boolean>;
 
@@ -147,8 +147,8 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
     return result;
   },
 
-  loadOutput: async (path) => {
-    const result = await api.loadOutput(path);
+  loadOutput: async (path, force?) => {
+    const result = await api.loadOutput(path, force);
     return result;
   },
 

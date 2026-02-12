@@ -26,11 +26,11 @@ export async function loadKB(path: string): Promise<LoadKBResponse> {
   });
 }
 
-export async function loadOutput(path: string): Promise<LoadOutputResponse> {
+export async function loadOutput(path: string, force?: boolean): Promise<LoadOutputResponse> {
   return fetchJSON("/api/load/output", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path }),
+    body: JSON.stringify({ path, force }),
   });
 }
 
